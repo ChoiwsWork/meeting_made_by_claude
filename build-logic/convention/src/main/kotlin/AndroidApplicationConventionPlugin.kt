@@ -1,0 +1,36 @@
+import com.android.build.api.dsl.ApplicationExtension
+import org.gradle.api.JavaVersion
+import org.gradle.api.Plugin
+import org.gradle.api.Project
+import org.gradle.kotlin.dsl.configure
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
+
+class AndroidApplicationConventionPlugin : Plugin<Project> {
+    override fun apply(target: Project) {
+        with(target) {
+            // AGP 9.x auto-applies org.jetbrains.kotlin.android when Kotlin is on the classpath;
+            // applying it again here would re-register the `kotlin` extension and fail.
+            pluginManager.apply("com.android.application")
+
+            extensions.configure<ApplicationExtension> {
+                compileSdk = 36
+                defaultConfig {
+                    minSdk = 24
+                    targetSdk = 36
+                    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+                }
+                compileOptions {
+                    sourceCompatibility = JavaVersion.VERSION_11
+                    targetCompatibility = JavaVersion.VERSION_11
+                }
+            }
+
+            extensions.configure<KotlinAndroidProjectExtension> {
+                compilerOptions {
+                    jvmTarget.set(JvmTarget.JVM_11)
+                }
+            }
+        }
+    }
+}
