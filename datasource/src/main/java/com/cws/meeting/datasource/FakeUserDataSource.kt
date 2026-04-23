@@ -32,5 +32,17 @@ class FakeUserDataSource @Inject constructor() : UserDataSource {
             displayName = "Minsu",
             email = null,
         )
+
+        val Haeun = User(
+            id = "user-haeun",
+            displayName = "Haeun",
+            email = "haeun@example.com",
+        )
+
+        val Dowon = User(
+            id = "user-dowon",
+            displayName = "Dowon",
+            email = null,
+        )
     }
 }

@@ -12,4 +12,6 @@ class DefaultConferenceRepository @Inject constructor(
 ) : ConferenceRepository {
 
     override fun observeAll(): Flow<List<Conference>> = dataSource.observeAll()
+
+    override fun observeById(id: String): Flow<Conference?> = dataSource.observeById(id)
 }

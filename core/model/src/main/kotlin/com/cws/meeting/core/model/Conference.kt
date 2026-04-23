@@ -10,4 +10,5 @@ data class Conference(
     val title: String,
     val scheduledAt: Instant,
     val host: User,
+    val attendees: List<User>,
 )
