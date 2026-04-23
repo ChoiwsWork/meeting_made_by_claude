@@ -29,6 +29,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cws.meeting.common.designsystem.theme.MeetingTheme
 import com.cws.meeting.core.model.Conference
+import com.cws.meeting.core.model.User
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -113,7 +114,7 @@ private fun ConferenceCard(conference: Conference) {
                 fontWeight = FontWeight.SemiBold,
             )
             Text(
-                text = "Host: ${conference.hostName}",
+                text = "Host: ${conference.host.displayName}",
                 style = MaterialTheme.typography.bodyMedium,
             )
             Text(
@@ -130,19 +131,19 @@ private val sampleConferences = listOf(
         id = "conf-1",
         title = "Weekly sync",
         scheduledAt = Instant.parse("2026-04-23T10:00:00Z"),
-        hostName = "Wooseok",
+        host = User(id = "user-wooseok", displayName = "Wooseok"),
     ),
     Conference(
         id = "conf-2",
         title = "Architecture review",
         scheduledAt = Instant.parse("2026-04-23T13:00:00Z"),
-        hostName = "Jihye",
+        host = User(id = "user-jihye", displayName = "Jihye"),
     ),
     Conference(
         id = "conf-3",
         title = "Retrospective",
         scheduledAt = Instant.parse("2026-04-24T09:00:00Z"),
-        hostName = "Minsu",
+        host = User(id = "user-minsu", displayName = "Minsu"),
     ),
 )
 

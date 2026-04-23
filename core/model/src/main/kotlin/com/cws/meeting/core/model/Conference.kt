@@ -9,5 +9,5 @@ data class Conference(
     val id: String,
     val title: String,
     val scheduledAt: Instant,
-    val hostName: String,
+    val host: User,
 )
