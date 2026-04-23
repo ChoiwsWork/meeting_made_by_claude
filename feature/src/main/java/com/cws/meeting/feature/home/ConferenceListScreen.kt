@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalTime::class)
+
 package com.cws.meeting.feature.home
 
 import androidx.compose.foundation.layout.Arrangement
@@ -21,11 +23,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.cws.meeting.common.designsystem.theme.MeetingTheme
 import com.cws.meeting.core.model.Conference
 import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 @Composable
 fun ConferenceListRoute(
@@ -95,7 +100,6 @@ private fun ConferenceList(
     }
 }
 
-@OptIn(ExperimentalTime::class)
 @Composable
 private fun ConferenceCard(conference: Conference) {
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -117,6 +121,63 @@ private fun ConferenceCard(conference: Conference) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+    }
+}
+
+private val sampleConferences = listOf(
+    Conference(
+        id = "conf-1",
+        title = "Weekly sync",
+        scheduledAt = Instant.parse("2026-04-23T10:00:00Z"),
+        hostName = "Wooseok",
+    ),
+    Conference(
+        id = "conf-2",
+        title = "Architecture review",
+        scheduledAt = Instant.parse("2026-04-23T13:00:00Z"),
+        hostName = "Jihye",
+    ),
+    Conference(
+        id = "conf-3",
+        title = "Retrospective",
+        scheduledAt = Instant.parse("2026-04-24T09:00:00Z"),
+        hostName = "Minsu",
+    ),
+)
+
+@PreviewLightDark
+@Composable
+private fun ConferenceListScreenPreview() {
+    MeetingTheme(dynamicColor = false) {
+        ConferenceListScreen(
+            state = ConferenceListUiState(
+                conferences = sampleConferences,
+                isLoading = false,
+            ),
+        )
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun ConferenceListScreenEmptyPreview() {
+    MeetingTheme(dynamicColor = false) {
+        ConferenceListScreen(
+            state = ConferenceListUiState(
+                conferences = emptyList(),
+                isLoading = false,
+            ),
+        )
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun ConferenceCardPreview() {
+    MeetingTheme(dynamicColor = false) {
+        Box(modifier = Modifier.padding(16.dp)) {
+            ConferenceCard(sampleConferences.first())
         }
     }
 }
