@@ -23,19 +23,19 @@ class FakeConferenceDataSource @Inject constructor() : ConferenceDataSource {
                 id = "conf-1",
                 title = "Weekly sync",
                 scheduledAt = now + 1.hours,
-                hostName = "Wooseok",
+                host = FakeUserDataSource.CurrentUser,
             ),
             Conference(
                 id = "conf-2",
                 title = "Architecture review",
                 scheduledAt = now + 4.hours,
-                hostName = "Jihye",
+                host = FakeUserDataSource.Jihye,
             ),
             Conference(
                 id = "conf-3",
                 title = "Retrospective",
                 scheduledAt = now + 24.hours,
-                hostName = "Minsu",
+                host = FakeUserDataSource.Minsu,
             ),
         )
     )
