@@ -1,0 +1,122 @@
+package com.cws.meeting.feature.home
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.cws.meeting.core.model.Conference
+import kotlin.time.ExperimentalTime
+
+@Composable
+fun ConferenceListRoute(
+    viewModel: ConferenceListViewModel = hiltViewModel(),
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    ConferenceListScreen(state = uiState)
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ConferenceListScreen(state: ConferenceListUiState) {
+    Scaffold(
+        topBar = { TopAppBar(title = { Text("Conferences") }) },
+        modifier = Modifier.fillMaxSize(),
+    ) { innerPadding ->
+        when {
+            state.isLoading -> LoadingIndicator(innerPadding)
+            state.conferences.isEmpty() -> EmptyState(innerPadding)
+            else -> ConferenceList(state.conferences, innerPadding)
+        }
+    }
+}
+
+@Composable
+private fun LoadingIndicator(padding: PaddingValues) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(padding),
+        contentAlignment = Alignment.Center,
+    ) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+private fun EmptyState(padding: PaddingValues) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(padding),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text("No conferences scheduled")
+    }
+}
+
+@Composable
+private fun ConferenceList(
+    conferences: List<Conference>,
+    padding: PaddingValues,
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            end = 16.dp,
+            top = padding.calculateTopPadding() + 8.dp,
+            bottom = padding.calculateBottomPadding() + 8.dp,
+        ),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(items = conferences, key = { it.id }) { conference ->
+            ConferenceCard(conference)
+        }
+    }
+}
+
+@OptIn(ExperimentalTime::class)
+@Composable
+private fun ConferenceCard(conference: Conference) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = conference.title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = "Host: ${conference.hostName}",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Text(
+                text = conference.scheduledAt.toString(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
