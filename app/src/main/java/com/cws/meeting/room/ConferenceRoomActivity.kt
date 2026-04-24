@@ -17,7 +17,7 @@ import androidx.compose.runtime.setValue
 import com.cws.meeting.common.designsystem.theme.MeetingTheme
 import com.cws.meeting.core.model.ConferenceSession
 import com.cws.meeting.core.service.room.ConferenceSessionController
-import com.cws.meeting.feature.room.ConferenceRoomScreen
+import com.cws.meeting.feature.room.ConferenceRoomRoute
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -40,9 +40,9 @@ class ConferenceRoomActivity : ComponentActivity() {
 
         setContent {
             MeetingTheme {
-                ConferenceRoomScreen(
-                    conferenceId = session.conferenceId,
+                ConferenceRoomRoute(
                     isInPipMode = isInPipMode,
+                    onLeaveClick = { finish() },
                 )
             }
         }
