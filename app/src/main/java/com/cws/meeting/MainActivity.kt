@@ -51,6 +51,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun launchConferenceRoom(session: ConferenceSession) {
-        startActivity(ConferenceRoomActivity.createIntent(this, session.conferenceId))
+        startActivity(ConferenceRoomActivity.createIntent(this, session))
     }
 }

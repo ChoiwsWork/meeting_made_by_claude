@@ -15,25 +15,42 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.cws.meeting.common.designsystem.theme.MeetingTheme
+import com.cws.meeting.core.model.ConferenceSession
+import com.cws.meeting.core.service.room.ConferenceSessionController
 import com.cws.meeting.feature.room.ConferenceRoomScreen
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class ConferenceRoomActivity : ComponentActivity() {
 
+    @Inject lateinit var sessionController: ConferenceSessionController
+
     private var isInPipMode by mutableStateOf(false)
-    private var conferenceId: String = ""
+    private lateinit var session: ConferenceSession
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        conferenceId = intent.getStringExtra(EXTRA_CONFERENCE_ID).orEmpty()
+        session = ConferenceSession(
+            sessionId = intent.getStringExtra(EXTRA_SESSION_ID).orEmpty(),
+            conferenceId = intent.getStringExtra(EXTRA_CONFERENCE_ID).orEmpty(),
+        )
+        sessionController.start(session)
+
         setContent {
             MeetingTheme {
                 ConferenceRoomScreen(
-                    conferenceId = conferenceId,
+                    conferenceId = session.conferenceId,
                     isInPipMode = isInPipMode,
                 )
             }
         }
+    }
+
+    override fun onDestroy() {
+        sessionController.stop()
+        super.onDestroy()
     }
 
     override fun onUserLeaveHint() {
@@ -60,10 +77,12 @@ class ConferenceRoomActivity : ComponentActivity() {
 
     companion object {
         private const val EXTRA_CONFERENCE_ID = "conference_id"
+        private const val EXTRA_SESSION_ID = "session_id"
 
-        fun createIntent(context: Context, conferenceId: String): Intent =
+        fun createIntent(context: Context, session: ConferenceSession): Intent =
             Intent(context, ConferenceRoomActivity::class.java).apply {
-                putExtra(EXTRA_CONFERENCE_ID, conferenceId)
+                putExtra(EXTRA_CONFERENCE_ID, session.conferenceId)
+                putExtra(EXTRA_SESSION_ID, session.sessionId)
             }
     }
 }
