@@ -1,6 +1,7 @@
 package com.cws.meeting.core.service.conference
 
 import com.cws.meeting.core.model.Conference
+import com.cws.meeting.core.model.ConferenceSession
 import com.cws.meeting.datasource.ConferenceDataSource
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -14,4 +15,7 @@ class DefaultConferenceRepository @Inject constructor(
     override fun observeAll(): Flow<List<Conference>> = dataSource.observeAll()
 
     override fun observeById(id: String): Flow<Conference?> = dataSource.observeById(id)
+
+    override suspend fun join(id: String): Result<ConferenceSession> =
+        dataSource.joinConference(id)
 }

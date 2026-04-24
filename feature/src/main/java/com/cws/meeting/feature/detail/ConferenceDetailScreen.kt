@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -27,6 +28,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,6 +40,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cws.meeting.common.designsystem.theme.MeetingTheme
 import com.cws.meeting.core.model.Conference
+import com.cws.meeting.core.model.ConferenceSession
 import com.cws.meeting.core.model.User
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -45,10 +48,18 @@ import kotlin.time.Instant
 @Composable
 fun ConferenceDetailRoute(
     onBackClick: () -> Unit,
+    onJoinSuccess: (ConferenceSession) -> Unit,
     viewModel: ConferenceDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    ConferenceDetailScreen(state = uiState, onBackClick = onBackClick)
+    LaunchedEffect(viewModel) {
+        viewModel.joined.collect(onJoinSuccess)
+    }
+    ConferenceDetailScreen(
+        state = uiState,
+        onBackClick = onBackClick,
+        onJoinClick = viewModel::join,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,6 +67,7 @@ fun ConferenceDetailRoute(
 private fun ConferenceDetailScreen(
     state: ConferenceDetailUiState,
     onBackClick: () -> Unit,
+    onJoinClick: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -71,6 +83,11 @@ private fun ConferenceDetailScreen(
                 },
             )
         },
+        bottomBar = {
+            if (state is ConferenceDetailUiState.Loaded) {
+                JoinBar(isJoining = state.isJoining, onJoinClick = onJoinClick)
+            }
+        },
         modifier = Modifier.fillMaxSize(),
     ) { innerPadding ->
         when (state) {
@@ -84,6 +101,42 @@ private fun ConferenceDetailScreen(
                 conference = state.conference,
                 padding = innerPadding,
             )
+        }
+    }
+}
+
+@Composable
+private fun JoinBar(
+    isJoining: Boolean,
+    onJoinClick: () -> Unit,
+) {
+    Surface(tonalElevation = 3.dp) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+        ) {
+            Button(
+                onClick = onJoinClick,
+                enabled = !isJoining,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                if (isJoining) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                        )
+                        Text("Joining...")
+                    }
+                } else {
+                    Text("Join Meeting")
+                }
+            }
         }
     }
 }
@@ -222,6 +275,19 @@ private fun ConferenceDetailScreenPreview() {
         ConferenceDetailScreen(
             state = ConferenceDetailUiState.Loaded(sampleConference),
             onBackClick = {},
+            onJoinClick = {},
+        )
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun ConferenceDetailScreenJoiningPreview() {
+    MeetingTheme(dynamicColor = false) {
+        ConferenceDetailScreen(
+            state = ConferenceDetailUiState.Loaded(sampleConference, isJoining = true),
+            onBackClick = {},
+            onJoinClick = {},
         )
     }
 }
@@ -233,6 +299,7 @@ private fun ConferenceDetailScreenNotFoundPreview() {
         ConferenceDetailScreen(
             state = ConferenceDetailUiState.NotFound,
             onBackClick = {},
+            onJoinClick = {},
         )
     }
 }

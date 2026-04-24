@@ -3,6 +3,8 @@
 package com.cws.meeting.datasource
 
 import com.cws.meeting.core.model.Conference
+import com.cws.meeting.core.model.ConferenceSession
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -63,4 +65,16 @@ class FakeConferenceDataSource @Inject constructor() : ConferenceDataSource {
 
     override fun observeById(id: String): Flow<Conference?> =
         state.map { conferences -> conferences.firstOrNull { it.id == id } }
+
+    override suspend fun joinConference(id: String): Result<ConferenceSession> {
+        delay(800)
+        val conference = state.value.firstOrNull { it.id == id }
+            ?: return Result.failure(NoSuchElementException("Conference $id not found"))
+        return Result.success(
+            ConferenceSession(
+                sessionId = "session-${conference.id}",
+                conferenceId = conference.id,
+            )
+        )
+    }
 }

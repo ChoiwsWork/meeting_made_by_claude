@@ -7,11 +7,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -20,6 +23,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,16 +33,25 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cws.meeting.common.designsystem.theme.MeetingTheme
+import com.cws.meeting.core.model.ConferenceSession
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
 @Composable
 fun ConferenceListRoute(
     onConferenceClick: (String) -> Unit,
+    onJoinSuccess: (ConferenceSession) -> Unit,
     viewModel: ConferenceListViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    ConferenceListScreen(state = uiState, onConferenceClick = onConferenceClick)
+    LaunchedEffect(viewModel) {
+        viewModel.joined.collect(onJoinSuccess)
+    }
+    ConferenceListScreen(
+        state = uiState,
+        onConferenceClick = onConferenceClick,
+        onJoinClick = viewModel::join,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,6 +59,7 @@ fun ConferenceListRoute(
 private fun ConferenceListScreen(
     state: ConferenceListUiState,
     onConferenceClick: (String) -> Unit,
+    onJoinClick: (String) -> Unit,
 ) {
     Scaffold(
         topBar = { TopAppBar(title = { Text("Conferences") }) },
@@ -54,7 +68,13 @@ private fun ConferenceListScreen(
         when {
             state.isLoading -> LoadingIndicator(innerPadding)
             state.conferences.isEmpty() -> EmptyState(innerPadding)
-            else -> ConferenceList(state.conferences, innerPadding, onConferenceClick)
+            else -> ConferenceList(
+                conferences = state.conferences,
+                joiningId = state.joiningId,
+                padding = innerPadding,
+                onConferenceClick = onConferenceClick,
+                onJoinClick = onJoinClick,
+            )
         }
     }
 }
@@ -86,8 +106,10 @@ private fun EmptyState(padding: PaddingValues) {
 @Composable
 private fun ConferenceList(
     conferences: List<ConferenceSummary>,
+    joiningId: String?,
     padding: PaddingValues,
     onConferenceClick: (String) -> Unit,
+    onJoinClick: (String) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -102,7 +124,10 @@ private fun ConferenceList(
         items(items = conferences, key = { it.id }) { conference ->
             ConferenceCard(
                 conference = conference,
+                isJoining = joiningId == conference.id,
+                joinEnabled = joiningId == null,
                 onClick = { onConferenceClick(conference.id) },
+                onJoinClick = { onJoinClick(conference.id) },
             )
         }
     }
@@ -111,31 +136,56 @@ private fun ConferenceList(
 @Composable
 private fun ConferenceCard(
     conference: ConferenceSummary,
+    isJoining: Boolean,
+    joinEnabled: Boolean,
     onClick: () -> Unit,
+    onJoinClick: () -> Unit,
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                text = conference.title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = "Host: ${conference.hostDisplayName}",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Text(
-                text = conference.scheduledAt.toString(),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = conference.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    text = "Host: ${conference.hostDisplayName}",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Text(
+                    text = conference.scheduledAt.toString(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Button(
+                onClick = onJoinClick,
+                enabled = joinEnabled && !isJoining,
+            ) {
+                if (isJoining) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                } else {
+                    Text("Join")
+                }
+            }
         }
     }
 }
@@ -171,6 +221,23 @@ private fun ConferenceListScreenPreview() {
                 isLoading = false,
             ),
             onConferenceClick = {},
+            onJoinClick = {},
+        )
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun ConferenceListScreenJoiningPreview() {
+    MeetingTheme(dynamicColor = false) {
+        ConferenceListScreen(
+            state = ConferenceListUiState(
+                conferences = sampleSummaries,
+                isLoading = false,
+                joiningId = "conf-2",
+            ),
+            onConferenceClick = {},
+            onJoinClick = {},
         )
     }
 }
@@ -185,6 +252,7 @@ private fun ConferenceListScreenEmptyPreview() {
                 isLoading = false,
             ),
             onConferenceClick = {},
+            onJoinClick = {},
         )
     }
 }
@@ -196,7 +264,10 @@ private fun ConferenceCardPreview() {
         Box(modifier = Modifier.padding(16.dp)) {
             ConferenceCard(
                 conference = sampleSummaries.first(),
+                isJoining = false,
+                joinEnabled = true,
                 onClick = {},
+                onJoinClick = {},
             )
         }
     }
