@@ -10,6 +10,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.cws.meeting.common.designsystem.theme.MeetingTheme
+import com.cws.meeting.feature.detail.ConferenceDetail
+import com.cws.meeting.feature.detail.ConferenceDetailRoute
 import com.cws.meeting.feature.home.ConferenceListRoute
 import com.cws.meeting.feature.home.Home
 import dagger.hilt.android.AndroidEntryPoint
@@ -27,7 +29,18 @@ class MainActivity : ComponentActivity() {
                     startDestination = Home,
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    composable<Home> { ConferenceListRoute() }
+                    composable<Home> {
+                        ConferenceListRoute(
+                            onConferenceClick = { id ->
+                                navController.navigate(ConferenceDetail(conferenceId = id))
+                            },
+                        )
+                    }
+                    composable<ConferenceDetail> {
+                        ConferenceDetailRoute(
+                            onBackClick = { navController.popBackStack() },
+                        )
+                    }
                 }
             }
         }

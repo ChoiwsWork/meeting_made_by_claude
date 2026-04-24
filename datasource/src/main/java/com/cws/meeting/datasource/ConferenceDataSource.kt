@@ -5,4 +5,5 @@ import kotlinx.coroutines.flow.Flow
 
 interface ConferenceDataSource {
     fun observeAll(): Flow<List<Conference>>
+    fun observeById(id: String): Flow<Conference?>
 }

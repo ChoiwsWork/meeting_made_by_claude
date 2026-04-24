@@ -16,7 +16,12 @@ class ConferenceListViewModel @Inject constructor(
 ) : ViewModel() {
 
     val uiState: StateFlow<ConferenceListUiState> = observeConferences()
-        .map { ConferenceListUiState(conferences = it, isLoading = false) }
+        .map { conferences ->
+            ConferenceListUiState(
+                conferences = conferences.map { it.toSummary() },
+                isLoading = false,
+            )
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),

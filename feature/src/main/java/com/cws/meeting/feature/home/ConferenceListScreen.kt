@@ -2,6 +2,7 @@
 
 package com.cws.meeting.feature.home
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,22 +29,24 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cws.meeting.common.designsystem.theme.MeetingTheme
-import com.cws.meeting.core.model.Conference
-import com.cws.meeting.core.model.User
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
 @Composable
 fun ConferenceListRoute(
+    onConferenceClick: (String) -> Unit,
     viewModel: ConferenceListViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    ConferenceListScreen(state = uiState)
+    ConferenceListScreen(state = uiState, onConferenceClick = onConferenceClick)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ConferenceListScreen(state: ConferenceListUiState) {
+private fun ConferenceListScreen(
+    state: ConferenceListUiState,
+    onConferenceClick: (String) -> Unit,
+) {
     Scaffold(
         topBar = { TopAppBar(title = { Text("Conferences") }) },
         modifier = Modifier.fillMaxSize(),
@@ -51,7 +54,7 @@ private fun ConferenceListScreen(state: ConferenceListUiState) {
         when {
             state.isLoading -> LoadingIndicator(innerPadding)
             state.conferences.isEmpty() -> EmptyState(innerPadding)
-            else -> ConferenceList(state.conferences, innerPadding)
+            else -> ConferenceList(state.conferences, innerPadding, onConferenceClick)
         }
     }
 }
@@ -82,8 +85,9 @@ private fun EmptyState(padding: PaddingValues) {
 
 @Composable
 private fun ConferenceList(
-    conferences: List<Conference>,
+    conferences: List<ConferenceSummary>,
     padding: PaddingValues,
+    onConferenceClick: (String) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -96,14 +100,24 @@ private fun ConferenceList(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(items = conferences, key = { it.id }) { conference ->
-            ConferenceCard(conference)
+            ConferenceCard(
+                conference = conference,
+                onClick = { onConferenceClick(conference.id) },
+            )
         }
     }
 }
 
 @Composable
-private fun ConferenceCard(conference: Conference) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+private fun ConferenceCard(
+    conference: ConferenceSummary,
+    onClick: () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+    ) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -114,7 +128,7 @@ private fun ConferenceCard(conference: Conference) {
                 fontWeight = FontWeight.SemiBold,
             )
             Text(
-                text = "Host: ${conference.host.displayName}",
+                text = "Host: ${conference.hostDisplayName}",
                 style = MaterialTheme.typography.bodyMedium,
             )
             Text(
@@ -126,24 +140,24 @@ private fun ConferenceCard(conference: Conference) {
     }
 }
 
-private val sampleConferences = listOf(
-    Conference(
+private val sampleSummaries = listOf(
+    ConferenceSummary(
         id = "conf-1",
         title = "Weekly sync",
         scheduledAt = Instant.parse("2026-04-23T10:00:00Z"),
-        host = User(id = "user-wooseok", displayName = "Wooseok"),
+        hostDisplayName = "Wooseok",
     ),
-    Conference(
+    ConferenceSummary(
         id = "conf-2",
         title = "Architecture review",
         scheduledAt = Instant.parse("2026-04-23T13:00:00Z"),
-        host = User(id = "user-jihye", displayName = "Jihye"),
+        hostDisplayName = "Jihye",
     ),
-    Conference(
+    ConferenceSummary(
         id = "conf-3",
         title = "Retrospective",
         scheduledAt = Instant.parse("2026-04-24T09:00:00Z"),
-        host = User(id = "user-minsu", displayName = "Minsu"),
+        hostDisplayName = "Minsu",
     ),
 )
 
@@ -153,9 +167,10 @@ private fun ConferenceListScreenPreview() {
     MeetingTheme(dynamicColor = false) {
         ConferenceListScreen(
             state = ConferenceListUiState(
-                conferences = sampleConferences,
+                conferences = sampleSummaries,
                 isLoading = false,
             ),
+            onConferenceClick = {},
         )
     }
 }
@@ -169,6 +184,7 @@ private fun ConferenceListScreenEmptyPreview() {
                 conferences = emptyList(),
                 isLoading = false,
             ),
+            onConferenceClick = {},
         )
     }
 }
@@ -178,7 +194,10 @@ private fun ConferenceListScreenEmptyPreview() {
 private fun ConferenceCardPreview() {
     MeetingTheme(dynamicColor = false) {
         Box(modifier = Modifier.padding(16.dp)) {
-            ConferenceCard(sampleConferences.first())
+            ConferenceCard(
+                conference = sampleSummaries.first(),
+                onClick = {},
+            )
         }
     }
 }
