@@ -2,6 +2,7 @@ package com.cws.meeting.feature.room
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -78,6 +79,9 @@ private fun ConferenceRoomHomeScreen(
     info: ConferenceInfo?,
     onLeaveClick: () -> Unit,
     onChatClick: () -> Unit,
+    conferenceInfoChip: @Composable () -> Unit = {
+        ConferenceInfoChip(modifier = Modifier.fillMaxWidth())
+    },
 ) {
     var showParticipants by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
@@ -109,17 +113,26 @@ private fun ConferenceRoomHomeScreen(
         },
         modifier = Modifier.fillMaxSize(),
     ) { innerPadding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text = "Main area",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                conferenceInfoChip()
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "Main area",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 
@@ -194,15 +207,22 @@ private fun PipOverlay(
 @PreviewLightDark
 @Composable
 private fun ConferenceRoomHomeScreenPreview() {
+    val sampleInfo = ConferenceInfo(
+        agenda = "Weekly sync agenda",
+        roomNumber = "conf-1",
+        mode = ConferenceMode.DISCUSSION,
+    )
     MeetingTheme(dynamicColor = false) {
         ConferenceRoomHomeScreen(
-            info = ConferenceInfo(
-                agenda = "Weekly sync agenda",
-                roomNumber = "conf-1",
-                mode = ConferenceMode.DISCUSSION,
-            ),
+            info = sampleInfo,
             onLeaveClick = {},
             onChatClick = {},
+            conferenceInfoChip = {
+                ConferenceInfoChipContent(
+                    info = sampleInfo,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
         )
     }
 }
