@@ -38,6 +38,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.cws.meeting.common.analytics.TrackScreenViewEvent
 import com.cws.meeting.common.designsystem.theme.MeetingTheme
 import com.cws.meeting.core.model.Conference
 import com.cws.meeting.core.model.ConferenceSession
@@ -51,6 +52,7 @@ fun ConferenceDetailRoute(
     onJoinSuccess: (ConferenceSession) -> Unit,
     viewModel: ConferenceDetailViewModel = hiltViewModel(),
 ) {
+    TrackScreenViewEvent(screenName = "conference_detail")
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(viewModel) {
         viewModel.joined.collect(onJoinSuccess)

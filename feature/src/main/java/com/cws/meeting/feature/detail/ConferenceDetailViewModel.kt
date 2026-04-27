@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.cws.meeting.common.analytics.AnalyticsEvent
+import com.cws.meeting.common.analytics.AnalyticsHelper
 import com.cws.meeting.core.domain.conference.JoinConferenceUseCase
 import com.cws.meeting.core.domain.conference.ObserveConferenceDetailUseCase
 import com.cws.meeting.core.model.ConferenceSession
@@ -24,6 +26,7 @@ class ConferenceDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     observeConferenceDetail: ObserveConferenceDetailUseCase,
     private val joinConference: JoinConferenceUseCase,
+    private val analyticsHelper: AnalyticsHelper,
 ) : ViewModel() {
 
     private val args: ConferenceDetail = savedStateHandle.toRoute()
@@ -52,6 +55,15 @@ class ConferenceDetailViewModel @Inject constructor(
             isJoining.value = true
             val result = joinConference(args.conferenceId)
             isJoining.value = false
+            analyticsHelper.logEvent(
+                AnalyticsEvent(
+                    type = "conference_join",
+                    extras = mapOf(
+                        "conference_id" to args.conferenceId,
+                        "success" to result.isSuccess.toString(),
+                    ),
+                ),
+            )
             result.getOrNull()?.let { joinedEvents.send(it) }
         }
     }

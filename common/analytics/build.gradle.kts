@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.cws.android.library)
+    alias(libs.plugins.cws.android.compose)
     alias(libs.plugins.cws.android.hilt)
 }
 

@@ -11,9 +11,12 @@ import android.util.Rational
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.cws.meeting.common.analytics.AnalyticsHelper
+import com.cws.meeting.common.analytics.LocalAnalyticsHelper
 import com.cws.meeting.common.designsystem.theme.MeetingTheme
 import com.cws.meeting.core.model.ConferenceSession
 import com.cws.meeting.core.service.room.ConferenceSessionController
@@ -25,6 +28,7 @@ import javax.inject.Inject
 class ConferenceRoomActivity : ComponentActivity() {
 
     @Inject lateinit var sessionController: ConferenceSessionController
+    @Inject lateinit var analyticsHelper: AnalyticsHelper
 
     private var isInPipMode by mutableStateOf(false)
     private lateinit var session: ConferenceSession
@@ -39,11 +43,13 @@ class ConferenceRoomActivity : ComponentActivity() {
         sessionController.start(session)
 
         setContent {
-            MeetingTheme {
-                ConferenceRoomRoute(
-                    isInPipMode = isInPipMode,
-                    onLeaveClick = { finish() },
-                )
+            CompositionLocalProvider(LocalAnalyticsHelper provides analyticsHelper) {
+                MeetingTheme {
+                    ConferenceRoomRoute(
+                        isInPipMode = isInPipMode,
+                        onLeaveClick = { finish() },
+                    )
+                }
             }
         }
     }
