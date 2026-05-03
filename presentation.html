@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meeting 앱 개발 현황 발표</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/moon.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css" />
+  <style>
+    :root {
+      --accent: #4fc3f7;
+      --accent2: #81c784;
+      --accent3: #ffb74d;
+      --accent4: #f06292;
+      --module-app: #3a3a6a;
+      --module-feature: #1a5276;
+      --module-domain: #1a4a1a;
+      --module-service: #4a3a1a;
+      --module-datasource: #4a1a1a;
+      --module-model: #2a2a2a;
+      --module-design: #3a1a4a;
+      --module-analytics: #1a3a4a;
+    }
+
+    .reveal { font-size: 26px; }
+    .reveal h1 { font-size: 2em; color: var(--accent); }
+    .reveal h2 { font-size: 1.5em; color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 10px; margin-bottom: 30px; }
+    .reveal h3 { font-size: 1.1em; color: var(--accent3); }
+    .reveal code { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+
+    /* --- Cover Slide --- */
+    .cover-logo {
+      font-size: 5em;
+      margin-bottom: 20px;
+    }
+    .cover-subtitle {
+      color: #aaa;
+      font-size: 0.8em;
+      margin-top: 10px;
+    }
+    .cover-meta {
+      margin-top: 40px;
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      font-size: 0.75em;
+    }
+    .cover-meta .badge {
+      background: rgba(79,195,247,0.15);
+      border: 1px solid var(--accent);
+      border-radius: 20px;
+      padding: 6px 18px;
+      color: var(--accent);
+    }
+
+    /* --- Module Graph --- */
+    .module-graph {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.7em;
+    }
+    .module-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: center;
+    }
+    .module-box {
+      border-radius: 8px;
+      padding: 8px 14px;
+      text-align: center;
+      font-weight: 600;
+      min-width: 110px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .mod-app      { background: var(--module-app);        color: #8ab4f8; border-color: #8ab4f8; }
+    .mod-feature  { background: var(--module-feature);    color: #4fc3f7; border-color: #4fc3f7; }
+    .mod-domain   { background: var(--module-domain);     color: #81c784; border-color: #81c784; }
+    .mod-service  { background: var(--module-service);    color: #ffb74d; border-color: #ffb74d; }
+    .mod-datasrc  { background: var(--module-datasource); color: #f06292; border-color: #f06292; }
+    .mod-model    { background: var(--module-model);      color: #e0e0e0; border-color: #e0e0e0; }
+    .mod-design   { background: var(--module-design);     color: #ce93d8; border-color: #ce93d8; }
+    .mod-analytics{ background: var(--module-analytics);  color: #80cbc4; border-color: #80cbc4; }
+
+    .arrow-down {
+      color: #666;
+      font-size: 1.4em;
+      line-height: 1;
+    }
+    .arrow-right { color: #666; font-size: 1.2em; }
+
+    /* --- Layer Architecture --- */
+    .layer-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .layer-item {
+      display: flex;
+      align-items: center;
+      border-radius: 10px;
+      padding: 14px 22px;
+      gap: 16px;
+    }
+    .layer-icon { font-size: 1.6em; min-width: 40px; text-align: center; }
+    .layer-content { flex: 1; }
+    .layer-title { font-weight: 700; font-size: 0.9em; }
+    .layer-detail { font-size: 0.72em; color: #aaa; margin-top: 3px; }
+    .layer-module { font-size: 0.68em; border: 1px solid; border-radius: 10px; padding: 2px 8px; margin-left: auto; white-space: nowrap; }
+
+    .layer-ui       { background: rgba(58,58,106,0.6); border: 1px solid #8ab4f8; }
+    .layer-feat     { background: rgba(26,82,118,0.6); border: 1px solid #4fc3f7; }
+    .layer-domain   { background: rgba(26,74,26,0.6);  border: 1px solid #81c784; }
+    .layer-svc      { background: rgba(74,58,26,0.6);  border: 1px solid #ffb74d; }
+    .layer-data     { background: rgba(74,26,26,0.6);  border: 1px solid #f06292; }
+    .layer-model    { background: rgba(42,42,42,0.6);  border: 1px solid #e0e0e0; }
+
+    /* --- Timeline --- */
+    .timeline {
+      position: relative;
+      padding: 0 20px;
+      max-width: 820px;
+      margin: 0 auto;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 0; bottom: 0;
+      width: 2px;
+      background: rgba(79,195,247,0.3);
+      transform: translateX(-50%);
+    }
+    .tl-item {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      font-size: 0.72em;
+    }
+    .tl-item:nth-child(odd)  { flex-direction: row-reverse; }
+    .tl-item:nth-child(even) { flex-direction: row; }
+    .tl-content {
+      background: rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 10px 14px;
+      width: 44%;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .tl-item:nth-child(odd)  .tl-content { text-align: right; }
+    .tl-dot {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+      margin: 4px 10px;
+      align-self: flex-start;
+      margin-top: 10px;
+    }
+    .tl-spacer { width: 44%; flex-shrink: 0; }
+    .tl-date { color: var(--accent3); font-weight: 700; font-size: 0.9em; }
+    .tl-hash { color: #666; font-size: 0.85em; font-family: monospace; }
+    .tl-desc { color: #ccc; margin-top: 4px; }
+    .tl-files { color: #888; font-size: 0.85em; margin-top: 2px; }
+
+    /* --- Feature Cards --- */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      font-size: 0.78em;
+    }
+    .feature-card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      padding: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .feature-card h4 {
+      color: var(--accent);
+      margin: 0 0 10px 0;
+      font-size: 1em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .feature-card ul {
+      margin: 0;
+      padding-left: 18px;
+      color: #ccc;
+      line-height: 1.7;
+    }
+
+    /* --- Stats Bar --- */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin: 20px 0;
+      font-size: 0.8em;
+    }
+    .stat-item {
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      padding: 16px 10px;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .stat-number { font-size: 2.2em; font-weight: 700; color: var(--accent); line-height: 1.1; }
+    .stat-label  { color: #999; font-size: 0.85em; margin-top: 4px; }
+
+    /* --- Plugin Table --- */
+    .plugin-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.72em;
+    }
+    .plugin-table th {
+      background: rgba(79,195,247,0.15);
+      color: var(--accent);
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba(79,195,247,0.3);
+    }
+    .plugin-table td {
+      padding: 7px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      color: #ccc;
+    }
+    .plugin-table tr:last-child td { border-bottom: none; }
+    .plugin-table code {
+      color: var(--accent3);
+      background: rgba(255,183,77,0.1);
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 0.95em;
+    }
+
+    /* --- Tech Decision Cards --- */
+    .decision-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      font-size: 0.73em;
+    }
+    .decision-card {
+      background: rgba(255,255,255,0.04);
+      border-radius: 8px;
+      padding: 14px;
+      border-left: 3px solid var(--accent);
+    }
+    .decision-card.green  { border-left-color: var(--accent2); }
+    .decision-card.orange { border-left-color: var(--accent3); }
+    .decision-card.pink   { border-left-color: var(--accent4); }
+    .decision-card h4 {
+      margin: 0 0 8px 0;
+      font-size: 1em;
+      color: #fff;
+    }
+    .decision-card p { color: #bbb; margin: 0; line-height: 1.6; }
+
+    /* --- Status --- */
+    .status-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      font-size: 0.78em;
+    }
+    .status-col h3 { margin-bottom: 14px; }
+    .status-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 10px;
+      color: #ccc;
+      line-height: 1.5;
+    }
+    .status-icon { font-size: 1.1em; flex-shrink: 0; }
+
+    /* --- Tech Stack Pills --- */
+    .tech-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .tech-pill {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 0.75em;
+      color: #ddd;
+    }
+    .tech-pill.primary {
+      background: rgba(79,195,247,0.15);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* --- Model Card --- */
+    .model-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      font-size: 0.78em;
+    }
+    .model-card {
+      background: rgba(255,255,255,0.04);
+      border-radius: 10px;
+      padding: 14px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .model-card h4 {
+      color: var(--accent3);
+      margin: 0 0 10px 0;
+      font-family: monospace;
+      font-size: 1.1em;
+    }
+    .field-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 5px;
+      align-items: baseline;
+    }
+    .field-name { color: #81c784; font-family: monospace; min-width: 120px; }
+    .field-type { color: #4fc3f7; font-family: monospace; font-size: 0.9em; }
+    .field-note { color: #888; font-size: 0.85em; }
+
+    /* Utility */
+    .tag {
+      display: inline-block;
+      background: rgba(79,195,247,0.12);
+      border: 1px solid rgba(79,195,247,0.4);
+      border-radius: 4px;
+      padding: 1px 7px;
+      font-size: 0.75em;
+      color: var(--accent);
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+    .tag.green { background: rgba(129,199,132,0.12); border-color: rgba(129,199,132,0.4); color: var(--accent2); }
+    .tag.orange { background: rgba(255,183,77,0.12); border-color: rgba(255,183,77,0.4); color: var(--accent3); }
+
+    .reveal pre { font-size: 0.7em; }
+    .reveal .slides section { padding: 20px 40px; }
+    .small { font-size: 0.75em; color: #999; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+  <!-- ==================== SLIDE 1: COVER ==================== -->
+  <section>
+    <div class="cover-logo">📹</div>
+    <h1>Meeting</h1>
+    <p style="font-size:1.1em; color:#ccc; margin: 0;">안드로이드 현대 앱 아키텍처 학습 프로젝트</p>
+    <p class="cover-subtitle">com.cws.meeting · Multi-module Android App</p>
+    <div class="cover-meta">
+      <span class="badge">2026-04-21 ~ 04-24</span>
+      <span class="badge">7 Commits</span>
+      <span class="badge">8 Modules</span>
+      <span class="badge">Kotlin 2.2.10</span>
+    </div>
+  </section>
+
+  <!-- ==================== SLIDE 2: PROJECT OVERVIEW ==================== -->
+  <section>
+    <h2>🎯 프로젝트 개요</h2>
+    <p style="color:#ccc; text-align:center; margin-bottom: 24px;">
+      Zoom/Meet 스타일 화상회의 앱을 목표로 하되,<br>
+      <strong style="color:var(--accent)">안드로이드 현대 앱 아키텍처 학습</strong>이 핵심 목적
+    </p>
+    <div class="tech-pills">
+      <span class="tech-pill primary">Jetpack Compose</span>
+      <span class="tech-pill primary">Material 3</span>
+      <span class="tech-pill primary">Hilt</span>
+      <span class="tech-pill primary">Navigation Compose</span>
+      <span class="tech-pill primary">Coroutines + Flow</span>
+      <span class="tech-pill">Kotlin 2.2.10</span>
+      <span class="tech-pill">AGP 9.1.1</span>
+      <span class="tech-pill">Compose BOM 2026.02.01</span>
+      <span class="tech-pill">KSP 2.2.10-2.0.2</span>
+      <span class="tech-pill">compileSdk 36 / minSdk 24</span>
+    </div>
+    <div class="stats-grid" style="margin-top: 30px;">
+      <div class="stat-item">
+        <div class="stat-number">8</div>
+        <div class="stat-label">Production Modules</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">2</div>
+        <div class="stat-label">구현된 화면</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">3</div>
+        <div class="stat-label">Use Cases</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">36</div>
+        <div class="stat-label">Kotlin 소스 파일</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== SLIDE 3: MODULE STRUCTURE ==================== -->
+  <section>
+    <h2>🧩 멀티모듈 구조</h2>
+    <div class="module-graph">
+      <div class="module-row">
+        <div class="module-box mod-app">:app</div>
+      </div>
+      <div class="arrow-down">↓</div>
+      <div class="module-row">
+        <div class="module-box mod-feature">:feature</div>
+        <div class="arrow-right">→</div>
+        <div class="module-box mod-design">:common<br>:designsystem</div>
+        <div class="arrow-right">←</div>
+        <div class="module-box mod-analytics">:common<br>:analytics</div>
+      </div>
+      <div class="arrow-down">↓</div>
+      <div class="module-row">
+        <div class="module-box mod-domain">:core:domain</div>
+      </div>
+      <div class="arrow-down">↓</div>
+      <div class="module-row">
+        <div class="module-box mod-service">:core:service</div>
+        <div class="arrow-right">←</div>
+        <div class="module-box mod-model">:core:model</div>
+      </div>
+      <div class="arrow-down">↓</div>
+      <div class="module-row">
+        <div class="module-box mod-datasrc">:datasource</div>
+      </div>
+    </div>
+    <p class="small" style="text-align:center; margin-top:14px;">
+      ⚡ :datasource의 유일한 소비자는 :core:service &nbsp;·&nbsp; :core:model은 순수 Kotlin (Android 의존 없음)
+    </p>
+  </section>
+
+  <!-- ==================== SLIDE 4: ARCHITECTURE LAYERS ==================== -->
+  <section>
+    <h2>🏗️ 아키텍처 레이어</h2>
+    <div class="layer-stack">
+      <div class="layer-item layer-feat fragment">
+        <div class="layer-icon">📱</div>
+        <div class="layer-content">
+          <div class="layer-title">Feature Layer (Presentation)</div>
+          <div class="layer-detail">ViewModel + StateFlow · Compose UI · type-safe Navigation</div>
+        </div>
+        <div class="layer-module" style="color:#4fc3f7;border-color:#4fc3f7;">:feature / :app</div>
+      </div>
+      <div style="text-align:center; color:#555; font-size:1.3em;">↓</div>
+      <div class="layer-item layer-domain fragment">
+        <div class="layer-icon">⚙️</div>
+        <div class="layer-content">
+          <div class="layer-title">Domain Layer</div>
+          <div class="layer-detail">UseCase · 비즈니스 로직 · Flow 변환</div>
+        </div>
+        <div class="layer-module" style="color:#81c784;border-color:#81c784;">:core:domain</div>
+      </div>
+      <div style="text-align:center; color:#555; font-size:1.3em;">↓</div>
+      <div class="layer-item layer-svc fragment">
+        <div class="layer-icon">🔌</div>
+        <div class="layer-content">
+          <div class="layer-title">Service Layer</div>
+          <div class="layer-detail">Repository 인터페이스 + 구현 · Hilt 바인딩</div>
+        </div>
+        <div class="layer-module" style="color:#ffb74d;border-color:#ffb74d;">:core:service</div>
+      </div>
+      <div style="text-align:center; color:#555; font-size:1.3em;">↓</div>
+      <div class="layer-item layer-data fragment">
+        <div class="layer-icon">💾</div>
+        <div class="layer-content">
+          <div class="layer-title">Data Layer</div>
+          <div class="layer-detail">DataSource 인터페이스 · Fake 구현 (StateFlow 기반)</div>
+        </div>
+        <div class="layer-module" style="color:#f06292;border-color:#f06292;">:datasource</div>
+      </div>
+      <div style="text-align:center; color:#555; font-size:1.3em;">↓</div>
+      <div class="layer-item layer-model fragment">
+        <div class="layer-icon">📦</div>
+        <div class="layer-content">
+          <div class="layer-title">Model Layer</div>
+          <div class="layer-detail">순수 Kotlin data class · Android 의존 없음</div>
+        </div>
+        <div class="layer-module" style="color:#e0e0e0;border-color:#e0e0e0;">:core:model</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== SLIDE 5: TIMELINE ==================== -->
+  <section>
+    <h2>📅 개발 타임라인</h2>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-content">
+          <div class="tl-date">Apr 21</div>
+          <div class="tl-hash">db2895a</div>
+          <div class="tl-desc">멀티모듈 스캐폴딩 · build-logic 컨벤션 플러그인 · Material 3 디자인시스템</div>
+          <div class="tl-files">63 files · 1,463 insertions</div>
+        </div>
+        <div class="tl-dot"></div>
+        <div class="tl-spacer"></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-spacer"></div>
+        <div class="tl-dot"></div>
+        <div class="tl-content">
+          <div class="tl-date">Apr 21</div>
+          <div class="tl-hash">13a9d3d</div>
+          <div class="tl-desc">MODULE_GRAPH.md — 레이어 의존성 규칙 문서화</div>
+          <div class="tl-files">1 file · 92 insertions</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-content">
+          <div class="tl-date">Apr 23</div>
+          <div class="tl-hash">c2ff112</div>
+          <div class="tl-desc">PR 템플릿 · 아키텍처 체크리스트 표준화</div>
+          <div class="tl-files">1 file · 27 insertions</div>
+        </div>
+        <div class="tl-dot"></div>
+        <div class="tl-spacer"></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-spacer"></div>
+        <div class="tl-dot" style="background:var(--accent2);"></div>
+        <div class="tl-content" style="border-color:rgba(129,199,132,0.3);">
+          <div class="tl-date">Apr 23</div>
+          <div class="tl-hash">1f9622e</div>
+          <div class="tl-desc">🚀 첫 번째 기능 — 회의 목록 수직 슬라이스 (Model → DataSource → Repository → UseCase → UI)</div>
+          <div class="tl-files">15 files · 311 insertions</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-content">
+          <div class="tl-date">Apr 23</div>
+          <div class="tl-hash">8a08140</div>
+          <div class="tl-desc">@PreviewLightDark — 로딩/빈 목록/카드 상태 인앱 미리보기</div>
+          <div class="tl-files">1 file · 62 insertions</div>
+        </div>
+        <div class="tl-dot"></div>
+        <div class="tl-spacer"></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-spacer"></div>
+        <div class="tl-dot" style="background:var(--accent3);"></div>
+        <div class="tl-content" style="border-color:rgba(255,183,77,0.3);">
+          <div class="tl-date">Apr 23</div>
+          <div class="tl-hash">1f94dc2</div>
+          <div class="tl-desc">User 모델 도입 · Conference.host: User 리팩터링 · UserRepository + UseCase</div>
+          <div class="tl-files">11 files · 131 insertions</div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-content">
+          <div class="tl-date">Apr 24</div>
+          <div class="tl-hash">1030c25</div>
+          <div class="tl-desc">🗺️ 회의 상세 화면 · 참석자 목록 · 네비게이션 (목록 → 상세 → 뒤로)</div>
+          <div class="tl-files">18 files · 419 insertions</div>
+        </div>
+        <div class="tl-dot" style="background:var(--accent4);"></div>
+        <div class="tl-spacer"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== SLIDE 6: SCREENS ==================== -->
+  <section>
+    <h2>📱 구현된 화면</h2>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <h4>🏠 회의 목록 화면 <span class="tag">Home</span></h4>
+        <ul>
+          <li>TopAppBar "Conferences"</li>
+          <li><strong>3가지 UI 상태</strong>: 로딩 · 빈 목록 · 목록</li>
+          <li>LazyColumn 카드 리스트</li>
+          <li>카드: 제목 · 호스트명 · 예정 시간</li>
+          <li>카드 클릭 → 상세 화면 이동</li>
+          <li><code>ConferenceListViewModel</code></li>
+          <li><code>ConferenceListUiState</code></li>
+        </ul>
+      </div>
+      <div class="feature-card">
+        <h4>📋 회의 상세 화면 <span class="tag">ConferenceDetail</span></h4>
+        <ul>
+          <li>TopAppBar + 뒤로가기 버튼</li>
+          <li>헤더: 제목 · 예정 시간 · 호스트</li>
+          <li>참석자 목록 (이름 + 이메일)</li>
+          <li>아바타 이니셜 원형 UI</li>
+          <li>호스트 뱃지 표시</li>
+          <li><strong>3가지 sealed state</strong>: Loading · NotFound · Loaded</li>
+          <li><code>ConferenceDetailViewModel</code></li>
+        </ul>
+      </div>
+      <div class="feature-card">
+        <h4>🎨 디자인 시스템 <span class="tag green">:common:designsystem</span></h4>
+        <ul>
+          <li>Material 3 테마</li>
+          <li>다크 모드 지원</li>
+          <li>Dynamic Color (Android 12+)</li>
+          <li>@PreviewLightDark 지원</li>
+        </ul>
+      </div>
+      <div class="feature-card">
+        <h4>🗺️ 타입 안전 네비게이션 <span class="tag orange">Navigation Compose</span></h4>
+        <ul>
+          <li><code>@Serializable</code> object/class 라우트</li>
+          <li><code>Home</code> (object)</li>
+          <li><code>ConferenceDetail(conferenceId)</code></li>
+          <li>SavedStateHandle.toRoute() 활용</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== SLIDE 7: DOMAIN MODELS ==================== -->
+  <section>
+    <h2>📦 도메인 모델 & Use Cases</h2>
+    <div class="model-grid" style="margin-bottom: 20px;">
+      <div class="model-card">
+        <h4>data class Conference</h4>
+        <div class="field-row"><span class="field-name">id</span><span class="field-type">String</span></div>
+        <div class="field-row"><span class="field-name">title</span><span class="field-type">String</span></div>
+        <div class="field-row"><span class="field-name">scheduledAt</span><span class="field-type">Instant</span><span class="field-note">&nbsp;kotlin.time</span></div>
+        <div class="field-row"><span class="field-name">host</span><span class="field-type">User</span></div>
+        <div class="field-row"><span class="field-name">attendees</span><span class="field-type">List&lt;User&gt;</span></div>
+      </div>
+      <div class="model-card">
+        <h4>data class User</h4>
+        <div class="field-row"><span class="field-name">id</span><span class="field-type">String</span></div>
+        <div class="field-row"><span class="field-name">displayName</span><span class="field-type">String</span></div>
+        <div class="field-row"><span class="field-name">email</span><span class="field-type">String?</span><span class="field-note">&nbsp;optional</span></div>
+        <br>
+        <div style="color:#888;font-size:0.85em;">샘플 데이터: Wooseok, Jihye, Minsu, Haeun, Dowon</div>
+      </div>
+    </div>
+    <pre><code class="language-kotlin">// :core:domain — ObserveConferencesUseCase
+class ObserveConferencesUseCase @Inject constructor(
+    private val repository: ConferenceRepository
+) {
+    operator fun invoke(): Flow&lt;List&lt;Conference&gt;&gt; =
+        repository.observeAll()
+}
+
+// sealed UI state — ConferenceDetailUiState
+sealed interface ConferenceDetailUiState {
+    data object Loading : ConferenceDetailUiState
+    data object NotFound : ConferenceDetailUiState
+    data class Loaded(val conference: Conference) : ConferenceDetailUiState
+}</code></pre>
+  </section>
+
+  <!-- ==================== SLIDE 8: TECHNICAL DECISIONS ==================== -->
+  <section>
+    <h2>⚡ 기술적 결정사항</h2>
+    <div class="decision-grid">
+      <div class="decision-card">
+        <h4>🎭 Fake DataSource 전략</h4>
+        <p>백엔드 없이 개발 가능하도록 <code>FakeConferenceDataSource</code>, <code>FakeUserDataSource</code>를 인터페이스 뒤에 배치. MutableStateFlow로 실시간 업데이트 시뮬레이션. 향후 실제 구현체로 교체만 하면 됨.</p>
+      </div>
+      <div class="decision-card green">
+        <h4>🔄 Reactive State Management</h4>
+        <p>DataSource → Repository → UseCase → ViewModel까지 <strong>Flow 체인</strong>으로 연결. ViewModel에서 <code>stateIn(WhileSubscribed(5_000))</code>으로 라이프사이클 인식 수집. UI는 <code>collectAsStateWithLifecycle()</code> 사용.</p>
+      </div>
+      <div class="decision-card orange">
+        <h4>🏷️ Type-safe Navigation</h4>
+        <p>kotlinx.serialization으로 <code>@Serializable</code> destination 클래스 정의. 문자열 라우트 대신 컴파일 타임에 타입 안전성 보장. 네비게이션 인수를 <code>SavedStateHandle.toRoute()</code>로 역직렬화.</p>
+      </div>
+      <div class="decision-card pink">
+        <h4>📋 UI 모델 분리</h4>
+        <p>목록 화면용 경량 <code>ConferenceSummary</code>를 별도 정의해 도메인 모델과 UI 관심사 분리. 도메인 변경이 목록 UI에 미치는 영향 최소화.</p>
+      </div>
+      <div class="decision-card">
+        <h4>💉 Hilt DI 전략</h4>
+        <p>Repository · DataSource를 <code>@Singleton</code>으로 바인딩. 모듈별 <code>@Module</code>로 바인딩 분리 (ConferenceRepositoryModule, UserRepositoryModule). Hilt 집계는 <code>:app</code> 클로저를 통해 전이적으로 동작.</p>
+      </div>
+      <div class="decision-card green">
+        <h4>🎬 Compose Preview</h4>
+        <p><code>@PreviewLightDark</code>로 라이트/다크 상태 동시 미리보기. 결정론적 테스트 데이터(고정 타임스탬프)와 dynamic color 비활성화로 일관된 Preview 보장.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== SLIDE 9: CONVENTION PLUGINS ==================== -->
+  <section>
+    <h2>🔧 컨벤션 플러그인 (build-logic)</h2>
+    <p style="color:#aaa; text-align:center; margin-bottom: 20px; font-size:0.85em;">
+      Gradle 보일러플레이트 제거를 위해 composite build로 5가지 플러그인 제공
+    </p>
+    <table class="plugin-table">
+      <thead>
+        <tr>
+          <th>Plugin ID</th>
+          <th>역할</th>
+          <th>사용 모듈</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>cws.android.application</code></td>
+          <td>AGP app + kotlin-android + SDK/Java 기본값</td>
+          <td>:app</td>
+        </tr>
+        <tr>
+          <td><code>cws.android.library</code></td>
+          <td>AGP lib + kotlin-android + SDK/Java 기본값</td>
+          <td>모든 안드로이드 라이브러리</td>
+        </tr>
+        <tr>
+          <td><code>cws.kotlin.library</code></td>
+          <td>kotlin-jvm + Java 11</td>
+          <td>:core:model</td>
+        </tr>
+        <tr>
+          <td><code>cws.android.compose</code></td>
+          <td>kotlin-compose + Compose BOM + Material3<br><em style="color:#888;font-size:0.9em;">app/lib 자동 감지</em></td>
+          <td>:app, :feature, :common:designsystem</td>
+        </tr>
+        <tr>
+          <td><code>cws.android.hilt</code></td>
+          <td>KSP + Hilt 플러그인 + hilt-android / hilt-compiler</td>
+          <td>DI가 있는 모든 모듈</td>
+        </tr>
+      </tbody>
+    </table>
+    <pre style="margin-top:14px;"><code class="language-kotlin">// build.gradle.kts 예시
+plugins {
+    alias(libs.plugins.cws.android.library)
+    alias(libs.plugins.cws.android.compose)
+    alias(libs.plugins.cws.android.hilt)
+}</code></pre>
+  </section>
+
+  <!-- ==================== SLIDE 10: STATUS & NEXT ==================== -->
+  <section>
+    <h2>✅ 현재 상태 & 다음 단계</h2>
+    <div class="status-grid">
+      <div class="status-col">
+        <h3 style="color:var(--accent2);">완료된 것</h3>
+        <div class="status-item"><span class="status-icon">✅</span><span>8모듈 멀티모듈 구조 + build-logic</span></div>
+        <div class="status-item"><span class="status-icon">✅</span><span>회의 목록 화면 (로딩/빈/목록 상태)</span></div>
+        <div class="status-item"><span class="status-icon">✅</span><span>회의 상세 화면 + 참석자 목록</span></div>
+        <div class="status-item"><span class="status-icon">✅</span><span>목록 ↔ 상세 네비게이션</span></div>
+        <div class="status-item"><span class="status-icon">✅</span><span>Conference + User 도메인 모델</span></div>
+        <div class="status-item"><span class="status-icon">✅</span><span>3개 UseCase, 2개 Repository, 2개 DataSource</span></div>
+        <div class="status-item"><span class="status-icon">✅</span><span>Fake 데이터 (5명 유저, 3개 회의)</span></div>
+        <div class="status-item"><span class="status-icon">✅</span><span>Compose Preview (라이트/다크)</span></div>
+        <div class="status-item"><span class="status-icon">✅</span><span>PR 템플릿 + 아키텍처 가이드</span></div>
+      </div>
+      <div class="status-col">
+        <h3 style="color:var(--accent3);">앞으로의 방향</h3>
+        <div class="status-item"><span class="status-icon">🔲</span><span>회의 생성/편집 화면</span></div>
+        <div class="status-item"><span class="status-icon">🔲</span><span>사용자 인증 / 로그인 화면</span></div>
+        <div class="status-item"><span class="status-icon">🔲</span><span>:common:analytics 실제 구현</span></div>
+        <div class="status-item"><span class="status-icon">🔲</span><span>로컬 DB (Room) 연동</span></div>
+        <div class="status-item"><span class="status-icon">🔲</span><span>네트워크 DataSource (Retrofit)</span></div>
+        <div class="status-item"><span class="status-icon">🔲</span><span>단위 테스트 (ViewModel, UseCase)</span></div>
+        <div class="status-item"><span class="status-icon">🔲</span><span>UI 테스트 (Compose Testing)</span></div>
+        <div class="status-item"><span class="status-icon">🔲</span><span>미디어 레이어 (Fake → 실제)</span></div>
+      </div>
+    </div>
+    <p class="small" style="text-align:center; margin-top:20px;">
+      현재 아키텍처는 백엔드 교체, 기능 확장 모두 준비된 상태입니다 🚀
+    </p>
+  </section>
+
+  <!-- ==================== SLIDE 11: Q&A ==================== -->
+  <section>
+    <div style="text-align:center; padding: 40px 0;">
+      <div style="font-size:3em; margin-bottom:20px;">🙏</div>
+      <h1 style="margin-bottom:16px;">감사합니다</h1>
+      <p style="color:#aaa; font-size:0.9em;">질문 & 토론</p>
+      <div style="margin-top:40px; display:flex; justify-content:center; gap:30px; font-size:0.75em;">
+        <div style="text-align:center;">
+          <div style="color:var(--accent); font-weight:700; margin-bottom:4px;">Repository</div>
+          <div style="color:#aaa; font-family:monospace;">choiwswork/meeting_made_by_claude</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="color:var(--accent); font-weight:700; margin-bottom:4px;">Package</div>
+          <div style="color:#aaa; font-family:monospace;">com.cws.meeting</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="color:var(--accent); font-weight:700; margin-bottom:4px;">Date</div>
+          <div style="color:#aaa; font-family:monospace;">2026-05-03</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div><!-- .slides -->
+</div><!-- .reveal -->
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    transition: 'slide',
+    transitionSpeed: 'fast',
+    controls: true,
+    progress: true,
+    center: true,
+    slideNumber: 'c/t',
+    plugins: [ RevealHighlight, RevealNotes ],
+    highlight: {
+      highlightOnLoad: true,
+    },
+  });
+</script>
+</body>
+</html>
